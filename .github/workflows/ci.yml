@@ -28,6 +28,10 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
         
+    - name: Clear pip cache
+      run: |
+        rm -rf ~/.cache/pip
+
     - name: Cache pip dependencies
       uses: actions/cache@v3
       with:
