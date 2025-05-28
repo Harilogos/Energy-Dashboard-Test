@@ -186,7 +186,7 @@ jobs:
         "
         
     - name: Upload benchmark results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: benchmark-results
         path: |
@@ -284,7 +284,7 @@ jobs:
         fi
         
     - name: Upload memory profile
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: memory-profile
         path: |
@@ -412,7 +412,7 @@ jobs:
         python load_test.py
         
     - name: Upload load test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: load-test-results
         path: load_test.py
@@ -573,7 +573,7 @@ jobs:
         echo "- Monitor performance trends over time" >> performance-report.md
         
     - name: Upload performance report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: performance-report
         path: performance-report.md

@@ -58,7 +58,7 @@ jobs:
         # Add version validation logic here
         
     - name: Upload pre-release test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: pre-release-test-results
         path: test_reports/
@@ -112,7 +112,7 @@ jobs:
           .
         
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: release-artifacts-${{ steps.version.outputs.version }}
         path: |
@@ -251,7 +251,7 @@ jobs:
         python tests/test_runner.py --integration --verbose
         
     - name: Upload staging test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: staging-integration-test-results

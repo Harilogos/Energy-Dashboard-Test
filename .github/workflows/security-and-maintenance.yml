@@ -104,7 +104,7 @@ jobs:
         "
         
     - name: Upload security reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: security-scan-reports
@@ -230,7 +230,7 @@ jobs:
         delete-branch: true
         
     - name: Upload dependency reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: dependency-reports
@@ -300,7 +300,7 @@ jobs:
         "
         
     - name: Upload performance reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: performance-reports
@@ -362,7 +362,7 @@ jobs:
         "
         
     - name: Upload code quality reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: code-quality-reports
@@ -414,7 +414,7 @@ jobs:
         fi
         
     - name: Upload maintenance report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: maintenance-report
         path: maintenance-report.md
