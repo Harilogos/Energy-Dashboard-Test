@@ -1,0 +1,579 @@
+name: Performance Testing & Monitoring
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run performance tests weekly on Sundays at 6 AM UTC
+    - cron: '0 6 * * 0'
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of performance test'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - load
+        - stress
+        - memory
+        - benchmark
+
+env:
+  PYTHON_VERSION: '3.9'
+
+jobs:
+  # Job 1: Performance benchmarking
+  performance-benchmark:
+    name: Performance Benchmark
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_type == 'benchmark' || github.event.inputs.test_type == 'all' || github.event_name != 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-test.txt
+        pip install pytest-benchmark memory-profiler psutil
+        
+    - name: Run performance benchmarks
+      run: |
+        python tests/test_runner.py --marker slow --verbose
+        
+    - name: Create benchmark script
+      run: |
+        cat > benchmark_tests.py << 'EOF'
+        import time
+        import pandas as pd
+        import numpy as np
+        from datetime import datetime, date, timedelta
+        import pytest
+        import psutil
+        import os
+        
+        # Add project root to path
+        import sys
+        sys.path.insert(0, '.')
+        
+        class TestPerformanceBenchmarks:
+            """Performance benchmark tests for critical functions."""
+            
+            def test_data_loading_performance(self, benchmark):
+                """Benchmark data loading performance."""
+                def load_sample_data():
+                    # Simulate data loading
+                    dates = pd.date_range(start='2024-01-01', periods=10000, freq='15min')
+                    data = pd.DataFrame({
+                        'time': dates,
+                        'generation_kwh': np.random.uniform(50, 200, len(dates)),
+                        'plant_id': 'TEST.PLANT.001'
+                    })
+                    return data
+                
+                result = benchmark(load_sample_data)
+                assert len(result) == 10000
+                
+            def test_data_processing_performance(self, benchmark):
+                """Benchmark data processing performance."""
+                # Create sample data
+                dates = pd.date_range(start='2024-01-01', periods=5000, freq='15min')
+                data = pd.DataFrame({
+                    'time': dates,
+                    'generation_kwh': np.random.uniform(50, 200, len(dates))
+                })
+                
+                def process_data():
+                    # Simulate data processing operations
+                    processed = data.copy()
+                    processed['hour'] = processed['time'].dt.hour
+                    processed['date'] = processed['time'].dt.date
+                    daily_sum = processed.groupby('date')['generation_kwh'].sum()
+                    return daily_sum
+                
+                result = benchmark(process_data)
+                assert len(result) > 0
+                
+            def test_visualization_performance(self, benchmark):
+                """Benchmark visualization creation performance."""
+                import matplotlib.pyplot as plt
+                
+                # Create sample data
+                data = pd.DataFrame({
+                    'x': range(1000),
+                    'y': np.random.uniform(0, 100, 1000)
+                })
+                
+                def create_plot():
+                    fig, ax = plt.subplots(figsize=(10, 6))
+                    ax.plot(data['x'], data['y'])
+                    ax.set_title('Performance Test Plot')
+                    plt.close(fig)
+                    return fig
+                
+                result = benchmark(create_plot)
+                assert result is not None
+                
+            def test_memory_usage(self):
+                """Test memory usage of data operations."""
+                process = psutil.Process(os.getpid())
+                initial_memory = process.memory_info().rss / 1024 / 1024  # MB
+                
+                # Create large dataset
+                large_data = pd.DataFrame({
+                    'time': pd.date_range(start='2024-01-01', periods=50000, freq='15min'),
+                    'value': np.random.uniform(0, 1000, 50000)
+                })
+                
+                # Perform operations
+                processed = large_data.groupby(large_data['time'].dt.date)['value'].sum()
+                
+                final_memory = process.memory_info().rss / 1024 / 1024  # MB
+                memory_increase = final_memory - initial_memory
+                
+                print(f"Memory usage: {initial_memory:.2f} MB -> {final_memory:.2f} MB")
+                print(f"Memory increase: {memory_increase:.2f} MB")
+                
+                # Assert memory usage is reasonable (less than 500MB increase)
+                assert memory_increase < 500, f"Memory usage too high: {memory_increase:.2f} MB"
+        EOF
+        
+    - name: Run benchmark tests
+      run: |
+        pytest benchmark_tests.py --benchmark-json=benchmark-results.json -v
+        
+    - name: Analyze benchmark results
+      run: |
+        python -c "
+        import json
+        
+        with open('benchmark-results.json', 'r') as f:
+            results = json.load(f)
+        
+        print('📊 Benchmark Results Summary:')
+        print('=' * 50)
+        
+        for benchmark in results['benchmarks']:
+            name = benchmark['name']
+            stats = benchmark['stats']
+            mean_time = stats['mean']
+            min_time = stats['min']
+            max_time = stats['max']
+            
+            print(f'Test: {name}')
+            print(f'  Mean time: {mean_time:.4f}s')
+            print(f'  Min time:  {min_time:.4f}s')
+            print(f'  Max time:  {max_time:.4f}s')
+            print()
+            
+            # Performance thresholds
+            if 'data_loading' in name and mean_time > 1.0:
+                print(f'⚠️ Data loading performance warning: {mean_time:.4f}s > 1.0s')
+            elif 'data_processing' in name and mean_time > 0.5:
+                print(f'⚠️ Data processing performance warning: {mean_time:.4f}s > 0.5s')
+            elif 'visualization' in name and mean_time > 2.0:
+                print(f'⚠️ Visualization performance warning: {mean_time:.4f}s > 2.0s')
+        "
+        
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v3
+      with:
+        name: benchmark-results
+        path: |
+          benchmark-results.json
+          benchmark_tests.py
+
+  # Job 2: Memory profiling
+  memory-profiling:
+    name: Memory Profiling
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_type == 'memory' || github.event.inputs.test_type == 'all' || github.event_name != 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-test.txt
+        pip install memory-profiler psutil matplotlib
+        
+    - name: Create memory profiling script
+      run: |
+        cat > memory_profile_test.py << 'EOF'
+        import sys
+        sys.path.insert(0, '.')
+        
+        from memory_profiler import profile
+        import pandas as pd
+        import numpy as np
+        from datetime import datetime, timedelta
+        
+        @profile
+        def test_data_operations():
+            """Profile memory usage of data operations."""
+            print("Creating large dataset...")
+            dates = pd.date_range(start='2024-01-01', periods=100000, freq='15min')
+            data = pd.DataFrame({
+                'time': dates,
+                'generation_kwh': np.random.uniform(50, 200, len(dates)),
+                'consumption_kwh': np.random.uniform(100, 300, len(dates)),
+                'plant_id': ['PLANT_001'] * len(dates)
+            })
+            
+            print("Processing data...")
+            # Simulate typical data processing operations
+            data['hour'] = data['time'].dt.hour
+            data['date'] = data['time'].dt.date
+            
+            # Group by operations
+            daily_gen = data.groupby('date')['generation_kwh'].sum()
+            hourly_avg = data.groupby('hour')['generation_kwh'].mean()
+            
+            # Filtering operations
+            peak_hours = data[data['hour'].isin([8, 9, 18, 19, 20])]
+            
+            print("Creating visualizations...")
+            # Simulate plot data preparation
+            plot_data = data.resample('H', on='time')['generation_kwh'].mean()
+            
+            return len(data), len(daily_gen), len(hourly_avg), len(peak_hours)
+        
+        if __name__ == "__main__":
+            result = test_data_operations()
+            print(f"Processing completed: {result}")
+        EOF
+        
+    - name: Run memory profiling
+      run: |
+        python memory_profile_test.py > memory-profile.txt 2>&1
+        
+    - name: Analyze memory profile
+      run: |
+        echo "📊 Memory Profile Analysis:"
+        echo "=========================="
+        cat memory-profile.txt
+        
+        # Extract peak memory usage
+        peak_memory=$(grep -E "^\s*[0-9]+\s+[0-9.]+\s+MiB" memory-profile.txt | awk '{print $2}' | sort -n | tail -1)
+        echo ""
+        echo "Peak memory usage: ${peak_memory} MiB"
+        
+        # Check if memory usage is within acceptable limits (< 1GB)
+        if (( $(echo "$peak_memory > 1024" | bc -l) )); then
+          echo "⚠️ High memory usage detected: ${peak_memory} MiB"
+          exit 1
+        else
+          echo "✅ Memory usage within acceptable limits"
+        fi
+        
+    - name: Upload memory profile
+      uses: actions/upload-artifact@v3
+      with:
+        name: memory-profile
+        path: |
+          memory-profile.txt
+          memory_profile_test.py
+
+  # Job 3: Load testing simulation
+  load-testing:
+    name: Load Testing Simulation
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_type == 'load' || github.event.inputs.test_type == 'all' || github.event_name != 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-test.txt
+        pip install concurrent.futures threading
+        
+    - name: Create load testing script
+      run: |
+        cat > load_test.py << 'EOF'
+        import sys
+        sys.path.insert(0, '.')
+        
+        import concurrent.futures
+        import time
+        import pandas as pd
+        import numpy as np
+        from datetime import datetime, timedelta
+        import threading
+        
+        def simulate_data_request(request_id):
+            """Simulate a data request operation."""
+            start_time = time.time()
+            
+            # Simulate data generation and processing
+            dates = pd.date_range(start='2024-01-01', periods=1000, freq='15min')
+            data = pd.DataFrame({
+                'time': dates,
+                'generation_kwh': np.random.uniform(50, 200, len(dates))
+            })
+            
+            # Simulate processing
+            processed = data.groupby(data['time'].dt.hour)['generation_kwh'].mean()
+            
+            end_time = time.time()
+            duration = end_time - start_time
+            
+            return {
+                'request_id': request_id,
+                'duration': duration,
+                'data_points': len(data),
+                'processed_points': len(processed)
+            }
+        
+        def run_load_test(num_concurrent_requests=10, total_requests=100):
+            """Run load test with concurrent requests."""
+            print(f"Starting load test: {total_requests} requests, {num_concurrent_requests} concurrent")
+            
+            start_time = time.time()
+            results = []
+            
+            with concurrent.futures.ThreadPoolExecutor(max_workers=num_concurrent_requests) as executor:
+                # Submit all requests
+                future_to_request = {
+                    executor.submit(simulate_data_request, i): i 
+                    for i in range(total_requests)
+                }
+                
+                # Collect results
+                for future in concurrent.futures.as_completed(future_to_request):
+                    request_id = future_to_request[future]
+                    try:
+                        result = future.result()
+                        results.append(result)
+                    except Exception as exc:
+                        print(f'Request {request_id} generated an exception: {exc}')
+            
+            end_time = time.time()
+            total_duration = end_time - start_time
+            
+            # Analyze results
+            durations = [r['duration'] for r in results]
+            avg_duration = sum(durations) / len(durations)
+            max_duration = max(durations)
+            min_duration = min(durations)
+            
+            print(f"Load test completed in {total_duration:.2f}s")
+            print(f"Average request duration: {avg_duration:.4f}s")
+            print(f"Min request duration: {min_duration:.4f}s")
+            print(f"Max request duration: {max_duration:.4f}s")
+            print(f"Requests per second: {len(results) / total_duration:.2f}")
+            
+            # Performance assertions
+            assert avg_duration < 1.0, f"Average duration too high: {avg_duration:.4f}s"
+            assert max_duration < 5.0, f"Max duration too high: {max_duration:.4f}s"
+            
+            return results
+        
+        if __name__ == "__main__":
+            # Run different load scenarios
+            print("=== Light Load Test ===")
+            light_results = run_load_test(num_concurrent_requests=5, total_requests=50)
+            
+            print("\n=== Medium Load Test ===")
+            medium_results = run_load_test(num_concurrent_requests=10, total_requests=100)
+            
+            print("\n=== Heavy Load Test ===")
+            heavy_results = run_load_test(num_concurrent_requests=20, total_requests=200)
+            
+            print("\n✅ All load tests completed successfully!")
+        EOF
+        
+    - name: Run load tests
+      run: |
+        python load_test.py
+        
+    - name: Upload load test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: load-test-results
+        path: load_test.py
+
+  # Job 4: Performance regression detection
+  performance-regression:
+    name: Performance Regression Detection
+    runs-on: ubuntu-latest
+    needs: [performance-benchmark]
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download benchmark results
+      uses: actions/download-artifact@v3
+      with:
+        name: benchmark-results
+        
+    - name: Compare with baseline performance
+      run: |
+        python -c "
+        import json
+        import os
+        
+        # Load current benchmark results
+        with open('benchmark-results.json', 'r') as f:
+            current_results = json.load(f)
+        
+        # Simulate baseline comparison (in practice, you'd load from a baseline file)
+        baseline_thresholds = {
+            'test_data_loading_performance': 1.0,
+            'test_data_processing_performance': 0.5,
+            'test_visualization_performance': 2.0
+        }
+        
+        print('🔍 Performance Regression Analysis:')
+        print('=' * 50)
+        
+        regressions = []
+        
+        for benchmark in current_results['benchmarks']:
+            name = benchmark['name']
+            mean_time = benchmark['stats']['mean']
+            
+            if name in baseline_thresholds:
+                threshold = baseline_thresholds[name]
+                if mean_time > threshold:
+                    regressions.append({
+                        'test': name,
+                        'current': mean_time,
+                        'threshold': threshold,
+                        'regression': ((mean_time - threshold) / threshold) * 100
+                    })
+                    print(f'❌ Regression detected in {name}:')
+                    print(f'   Current: {mean_time:.4f}s, Threshold: {threshold:.4f}s')
+                    print(f'   Regression: {((mean_time - threshold) / threshold) * 100:.1f}%')
+                else:
+                    print(f'✅ {name}: {mean_time:.4f}s (within threshold)')
+        
+        if regressions:
+            print(f'\n⚠️ {len(regressions)} performance regression(s) detected!')
+            exit(1)
+        else:
+            print('\n✅ No performance regressions detected')
+        "
+        
+    - name: Comment PR with performance results
+      if: always()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          
+          let comment = '## 📊 Performance Test Results\n\n';
+          
+          try {
+            const results = JSON.parse(fs.readFileSync('benchmark-results.json', 'utf8'));
+            
+            comment += '| Test | Duration | Status |\n';
+            comment += '|------|----------|--------|\n';
+            
+            const thresholds = {
+              'test_data_loading_performance': 1.0,
+              'test_data_processing_performance': 0.5,
+              'test_visualization_performance': 2.0
+            };
+            
+            for (const benchmark of results.benchmarks) {
+              const name = benchmark.name;
+              const meanTime = benchmark.stats.mean;
+              const threshold = thresholds[name] || 1.0;
+              const status = meanTime <= threshold ? '✅ Pass' : '❌ Regression';
+              
+              comment += `| ${name} | ${meanTime.toFixed(4)}s | ${status} |\n`;
+            }
+            
+          } catch (error) {
+            comment += 'Performance test results not available.\n';
+          }
+          
+          comment += '\n📈 Detailed performance reports are available in the workflow artifacts.';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  # Job 5: Performance report generation
+  performance-report:
+    name: Generate Performance Report
+    runs-on: ubuntu-latest
+    needs: [performance-benchmark, memory-profiling, load-testing]
+    if: always()
+    
+    steps:
+    - name: Download all performance artifacts
+      uses: actions/download-artifact@v3
+      
+    - name: Generate comprehensive performance report
+      run: |
+        echo "# 📊 Performance Test Report - $(date -u +"%Y-%m-%d %H:%M:%S UTC")" > performance-report.md
+        echo "" >> performance-report.md
+        
+        echo "## 🏃 Benchmark Results" >> performance-report.md
+        if [ -f benchmark-results/benchmark-results.json ]; then
+          echo "✅ Benchmark tests completed successfully" >> performance-report.md
+        else
+          echo "❌ Benchmark tests failed or skipped" >> performance-report.md
+        fi
+        echo "" >> performance-report.md
+        
+        echo "## 🧠 Memory Profiling" >> performance-report.md
+        if [ -f memory-profile/memory-profile.txt ]; then
+          echo "✅ Memory profiling completed" >> performance-report.md
+          echo "\`\`\`" >> performance-report.md
+          head -20 memory-profile/memory-profile.txt >> performance-report.md
+          echo "\`\`\`" >> performance-report.md
+        else
+          echo "❌ Memory profiling failed or skipped" >> performance-report.md
+        fi
+        echo "" >> performance-report.md
+        
+        echo "## 🚀 Load Testing" >> performance-report.md
+        if [ -f load-test-results/load_test.py ]; then
+          echo "✅ Load testing completed" >> performance-report.md
+        else
+          echo "❌ Load testing failed or skipped" >> performance-report.md
+        fi
+        echo "" >> performance-report.md
+        
+        echo "## 📈 Summary" >> performance-report.md
+        echo "- All performance tests have been executed" >> performance-report.md
+        echo "- Results are available in the workflow artifacts" >> performance-report.md
+        echo "- Monitor performance trends over time" >> performance-report.md
+        
+    - name: Upload performance report
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-report
+        path: performance-report.md

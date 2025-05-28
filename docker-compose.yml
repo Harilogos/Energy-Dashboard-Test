@@ -1,0 +1,230 @@
+version: '3.8'
+
+services:
+  # Main application service
+  app:
+    build:
+      context: .
+      target: development
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+      - app_cache:/app/cache
+      - app_logs:/app/logs
+    environment:
+      - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+      - PYTHONPATH=/app
+    networks:
+      - energy_dashboard
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Testing service
+  test:
+    build:
+      context: .
+      target: testing
+    volumes:
+      - .:/app
+      - test_reports:/app/test_reports
+      - test_cache:/app/cache/test
+    environment:
+      - TESTING=true
+      - PYTHONPATH=/app
+    networks:
+      - energy_dashboard
+    profiles:
+      - testing
+    command: ["python", "tests/test_runner.py", "--all", "--coverage", "--verbose"]
+
+  # Unit testing service
+  test-unit:
+    build:
+      context: .
+      target: testing
+    volumes:
+      - .:/app
+      - test_reports:/app/test_reports
+    environment:
+      - TESTING=true
+      - PYTHONPATH=/app
+    networks:
+      - energy_dashboard
+    profiles:
+      - testing
+    command: ["python", "tests/test_runner.py", "--unit", "--coverage", "--verbose"]
+
+  # Integration testing service
+  test-integration:
+    build:
+      context: .
+      target: testing
+    volumes:
+      - .:/app
+      - test_reports:/app/test_reports
+    environment:
+      - TESTING=true
+      - PYTHONPATH=/app
+    networks:
+      - energy_dashboard
+    profiles:
+      - testing
+    command: ["python", "tests/test_runner.py", "--integration", "--verbose"]
+
+  # Performance testing service
+  test-performance:
+    build:
+      context: .
+      target: testing
+    volumes:
+      - .:/app
+      - test_reports:/app/test_reports
+    environment:
+      - TESTING=true
+      - PYTHONPATH=/app
+    networks:
+      - energy_dashboard
+    profiles:
+      - testing
+    command: ["python", "tests/test_runner.py", "--marker", "slow", "--verbose"]
+
+  # Code quality service
+  code-quality:
+    build:
+      context: .
+      target: ci
+    volumes:
+      - .:/app
+      - ci_reports:/app/ci_reports
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - energy_dashboard
+    profiles:
+      - quality
+    command: >
+      sh -c "
+        echo 'Running code quality checks...' &&
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics &&
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics &&
+        black --check --diff . &&
+        isort --check-only --diff . &&
+        mypy backend/ frontend/ src/ --ignore-missing-imports --no-strict-optional &&
+        echo 'Code quality checks completed!'
+      "
+
+  # Security scanning service
+  security-scan:
+    build:
+      context: .
+      target: ci
+    volumes:
+      - .:/app
+      - security_reports:/app/security_reports
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - energy_dashboard
+    profiles:
+      - security
+    command: >
+      sh -c "
+        echo 'Running security scans...' &&
+        safety check --json --output security_reports/safety-report.json || true &&
+        bandit -r backend/ frontend/ src/ -f json -o security_reports/bandit-report.json || true &&
+        echo 'Security scans completed!'
+      "
+
+  # Development database (if needed for future enhancements)
+  db:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_DB: energy_dashboard
+      POSTGRES_USER: dashboard_user
+      POSTGRES_PASSWORD: dashboard_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - energy_dashboard
+    profiles:
+      - database
+    restart: unless-stopped
+
+  # Redis for caching (if needed for future enhancements)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - energy_dashboard
+    profiles:
+      - cache
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # Monitoring service (Prometheus - if needed)
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - energy_dashboard
+    profiles:
+      - monitoring
+    restart: unless-stopped
+
+  # Grafana for dashboards (if needed)
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - energy_dashboard
+    profiles:
+      - monitoring
+    restart: unless-stopped
+
+volumes:
+  app_cache:
+    driver: local
+  app_logs:
+    driver: local
+  test_reports:
+    driver: local
+  test_cache:
+    driver: local
+  ci_reports:
+    driver: local
+  security_reports:
+    driver: local
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  energy_dashboard:
+    driver: bridge

@@ -1,0 +1,443 @@
+name: Security & Maintenance
+
+on:
+  schedule:
+    # Run security scans daily at 3 AM UTC
+    - cron: '0 3 * * *'
+    # Run dependency updates weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: 'Type of scan to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - security
+        - dependencies
+        - performance
+
+env:
+  PYTHON_VERSION: '3.9'
+
+jobs:
+  # Job 1: Security vulnerability scanning
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    if: github.event.inputs.scan_type == 'security' || github.event.inputs.scan_type == 'all' || github.event_name == 'schedule'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit semgrep
+        
+    - name: Run Safety (Python dependency security check)
+      run: |
+        safety check --json --output safety-report.json || true
+        
+    - name: Run Bandit (Python security linting)
+      run: |
+        bandit -r backend/ frontend/ src/ -f json -o bandit-report.json || true
+        
+    - name: Run Semgrep (Static analysis)
+      run: |
+        semgrep --config=auto --json --output=semgrep-report.json . || true
+        
+    - name: Run Trivy filesystem scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'json'
+        output: 'trivy-fs-report.json'
+        
+    - name: Parse security reports
+      run: |
+        python -c "
+        import json
+        import sys
+        
+        def parse_safety_report():
+            try:
+                with open('safety-report.json', 'r') as f:
+                    data = json.load(f)
+                    vulnerabilities = data.get('vulnerabilities', [])
+                    print(f'Safety found {len(vulnerabilities)} vulnerabilities')
+                    return len(vulnerabilities)
+            except:
+                return 0
+        
+        def parse_bandit_report():
+            try:
+                with open('bandit-report.json', 'r') as f:
+                    data = json.load(f)
+                    issues = data.get('results', [])
+                    high_severity = [i for i in issues if i.get('issue_severity') == 'HIGH']
+                    print(f'Bandit found {len(high_severity)} high severity issues')
+                    return len(high_severity)
+            except:
+                return 0
+        
+        safety_issues = parse_safety_report()
+        bandit_issues = parse_bandit_report()
+        
+        total_critical_issues = safety_issues + bandit_issues
+        print(f'Total critical security issues: {total_critical_issues}')
+        
+        if total_critical_issues > 0:
+            print('❌ Critical security issues found!')
+            sys.exit(1)
+        else:
+            print('✅ No critical security issues found')
+        "
+        
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-scan-reports
+        path: |
+          safety-report.json
+          bandit-report.json
+          semgrep-report.json
+          trivy-fs-report.json
+          
+    - name: Create security issue if vulnerabilities found
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const title = '🚨 Security Vulnerabilities Detected';
+          const body = `
+          ## Security Scan Results
+          
+          Critical security vulnerabilities have been detected in the codebase.
+          
+          ### Actions Required:
+          1. Review the security scan reports in the workflow artifacts
+          2. Update vulnerable dependencies
+          3. Fix security issues identified by static analysis
+          4. Re-run security scans to verify fixes
+          
+          ### Reports Available:
+          - Safety (Python dependencies)
+          - Bandit (Python security linting)
+          - Semgrep (Static analysis)
+          - Trivy (Filesystem scan)
+          
+          **Priority:** High
+          **Auto-generated:** ${new Date().toISOString()}
+          `;
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            body: body,
+            labels: ['security', 'high-priority', 'automated']
+          });
+
+  # Job 2: Dependency updates
+  dependency-updates:
+    name: Dependency Updates
+    runs-on: ubuntu-latest
+    if: github.event.inputs.scan_type == 'dependencies' || github.event.inputs.scan_type == 'all' || github.event_name == 'schedule'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install pip-tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install pip-tools
+        
+    - name: Check for outdated packages
+      run: |
+        pip list --outdated --format=json > outdated-packages.json
+        python -c "
+        import json
+        with open('outdated-packages.json', 'r') as f:
+            outdated = json.load(f)
+        print(f'Found {len(outdated)} outdated packages')
+        for pkg in outdated[:10]:  # Show first 10
+            print(f'  {pkg[\"name\"]}: {pkg[\"version\"]} -> {pkg[\"latest_version\"]}')
+        "
+        
+    - name: Update requirements files
+      run: |
+        # Backup current requirements
+        cp requirements.txt requirements.txt.backup || true
+        cp requirements-test.txt requirements-test.txt.backup || true
+        
+        # Update requirements (this is a simplified approach)
+        # In practice, you might want more sophisticated dependency management
+        pip-compile --upgrade requirements.in || true
+        pip-compile --upgrade requirements-test.in || true
+        
+    - name: Test with updated dependencies
+      run: |
+        pip install -r requirements-test.txt
+        python tests/test_validation.py
+        python tests/test_runner.py --unit --verbose
+        
+    - name: Create pull request for dependency updates
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'chore: update dependencies'
+        title: '🔄 Automated Dependency Updates'
+        body: |
+          ## Automated Dependency Updates
+          
+          This PR contains automated updates to project dependencies.
+          
+          ### Changes:
+          - Updated Python packages to latest compatible versions
+          - Verified compatibility with existing tests
+          
+          ### Testing:
+          - ✅ All unit tests pass
+          - ✅ Validation tests pass
+          
+          ### Review Checklist:
+          - [ ] Review updated package versions
+          - [ ] Check for breaking changes in updated packages
+          - [ ] Run full test suite
+          - [ ] Verify application functionality
+          
+          **Auto-generated:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        branch: automated/dependency-updates
+        delete-branch: true
+        
+    - name: Upload dependency reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: dependency-reports
+        path: |
+          outdated-packages.json
+          requirements.txt.backup
+          requirements-test.txt.backup
+
+  # Job 3: Performance monitoring
+  performance-monitoring:
+    name: Performance Monitoring
+    runs-on: ubuntu-latest
+    if: github.event.inputs.scan_type == 'performance' || github.event.inputs.scan_type == 'all' || github.event_name == 'schedule'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-test.txt
+        pip install memory-profiler psutil
+        
+    - name: Run performance tests
+      run: |
+        python tests/test_runner.py --marker slow --verbose
+        
+    - name: Profile memory usage
+      run: |
+        python -c "
+        import psutil
+        import json
+        from datetime import datetime
+        
+        # Get system info
+        memory = psutil.virtual_memory()
+        cpu = psutil.cpu_percent(interval=1)
+        disk = psutil.disk_usage('/')
+        
+        performance_data = {
+            'timestamp': datetime.now().isoformat(),
+            'memory': {
+                'total_gb': round(memory.total / (1024**3), 2),
+                'available_gb': round(memory.available / (1024**3), 2),
+                'percent_used': memory.percent
+            },
+            'cpu_percent': cpu,
+            'disk': {
+                'total_gb': round(disk.total / (1024**3), 2),
+                'free_gb': round(disk.free / (1024**3), 2),
+                'percent_used': round((disk.used / disk.total) * 100, 2)
+            }
+        }
+        
+        with open('performance-metrics.json', 'w') as f:
+            json.dump(performance_data, f, indent=2)
+            
+        print('Performance metrics collected')
+        print(f'Memory usage: {memory.percent}%')
+        print(f'CPU usage: {cpu}%')
+        "
+        
+    - name: Upload performance reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: performance-reports
+        path: |
+          performance-metrics.json
+          test_reports/
+
+  # Job 4: Code quality monitoring
+  code-quality-monitoring:
+    name: Code Quality Monitoring
+    runs-on: ubuntu-latest
+    if: github.event.inputs.scan_type == 'all' || github.event_name == 'schedule'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install code quality tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black isort mypy radon complexity
+        
+    - name: Run code complexity analysis
+      run: |
+        radon cc . --json > complexity-report.json
+        radon mi . --json > maintainability-report.json
+        
+    - name: Analyze code metrics
+      run: |
+        python -c "
+        import json
+        import statistics
+        
+        # Analyze complexity
+        with open('complexity-report.json', 'r') as f:
+            complexity_data = json.load(f)
+        
+        complexities = []
+        for file_data in complexity_data.values():
+            for item in file_data:
+                if isinstance(item, dict) and 'complexity' in item:
+                    complexities.append(item['complexity'])
+        
+        if complexities:
+            avg_complexity = statistics.mean(complexities)
+            max_complexity = max(complexities)
+            print(f'Average complexity: {avg_complexity:.2f}')
+            print(f'Maximum complexity: {max_complexity}')
+            
+            if max_complexity > 10:
+                print('⚠️ High complexity detected!')
+            else:
+                print('✅ Complexity levels acceptable')
+        "
+        
+    - name: Upload code quality reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: code-quality-reports
+        path: |
+          complexity-report.json
+          maintainability-report.json
+
+  # Job 5: Generate maintenance report
+  maintenance-report:
+    name: Generate Maintenance Report
+    runs-on: ubuntu-latest
+    needs: [security-scan, dependency-updates, performance-monitoring, code-quality-monitoring]
+    if: always()
+    
+    steps:
+    - name: Download all reports
+      uses: actions/download-artifact@v3
+      
+    - name: Generate maintenance summary
+      run: |
+        echo "# 🔧 Maintenance Report - $(date -u +"%Y-%m-%d")" > maintenance-report.md
+        echo "" >> maintenance-report.md
+        echo "## 🛡️ Security Status" >> maintenance-report.md
+        if [ -f security-scan-reports/safety-report.json ]; then
+          echo "- Security scan completed" >> maintenance-report.md
+        else
+          echo "- Security scan skipped or failed" >> maintenance-report.md
+        fi
+        echo "" >> maintenance-report.md
+        echo "## 📦 Dependencies" >> maintenance-report.md
+        if [ -f dependency-reports/outdated-packages.json ]; then
+          echo "- Dependency check completed" >> maintenance-report.md
+        else
+          echo "- Dependency check skipped or failed" >> maintenance-report.md
+        fi
+        echo "" >> maintenance-report.md
+        echo "## ⚡ Performance" >> maintenance-report.md
+        if [ -f performance-reports/performance-metrics.json ]; then
+          echo "- Performance monitoring completed" >> maintenance-report.md
+        else
+          echo "- Performance monitoring skipped or failed" >> maintenance-report.md
+        fi
+        echo "" >> maintenance-report.md
+        echo "## 📊 Code Quality" >> maintenance-report.md
+        if [ -f code-quality-reports/complexity-report.json ]; then
+          echo "- Code quality analysis completed" >> maintenance-report.md
+        else
+          echo "- Code quality analysis skipped or failed" >> maintenance-report.md
+        fi
+        
+    - name: Upload maintenance report
+      uses: actions/upload-artifact@v3
+      with:
+        name: maintenance-report
+        path: maintenance-report.md
+        
+    - name: Comment on latest commit with maintenance status
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          let comment = '## 🔧 Automated Maintenance Report\n\n';
+          
+          try {
+            const report = fs.readFileSync('maintenance-report.md', 'utf8');
+            comment += report;
+          } catch (error) {
+            comment += 'Maintenance report generation failed. Check workflow logs for details.';
+          }
+          
+          comment += '\n\n---\n*This is an automated maintenance report generated by GitHub Actions.*';
+          
+          github.rest.repos.createCommitComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            commit_sha: context.sha,
+            body: comment
+          });

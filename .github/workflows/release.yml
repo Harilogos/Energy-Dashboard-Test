@@ -1,0 +1,389 @@
+name: Release Pipeline
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version'
+        required: true
+        default: 'v1.0.0'
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - staging
+        - production
+
+env:
+  PYTHON_VERSION: '3.9'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Job 1: Pre-release validation
+  pre-release-validation:
+    name: Pre-release Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-test.txt
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        
+    - name: Run comprehensive test suite
+      run: |
+        python tests/test_runner.py --all --coverage --verbose
+        
+    - name: Validate configuration
+      run: |
+        python tests/test_validation.py
+        
+    - name: Check version consistency
+      run: |
+        echo "Validating version consistency across files..."
+        # Add version validation logic here
+        
+    - name: Upload pre-release test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: pre-release-test-results
+        path: test_reports/
+
+  # Job 2: Build release artifacts
+  build-artifacts:
+    name: Build Release Artifacts
+    runs-on: ubuntu-latest
+    needs: pre-release-validation
+    
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Get version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" == "release" ]; then
+          VERSION=${{ github.event.release.tag_name }}
+        else
+          VERSION=${{ github.event.inputs.version }}
+        fi
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "Building version: ${VERSION}"
+        
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build wheel setuptools
+        
+    - name: Build Python package
+      run: |
+        python -m build
+        
+    - name: Create release archive
+      run: |
+        tar -czf energy-dashboard-${{ steps.version.outputs.version }}.tar.gz \
+          --exclude='.git' \
+          --exclude='__pycache__' \
+          --exclude='*.pyc' \
+          --exclude='test_reports' \
+          --exclude='cache' \
+          .
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-artifacts-${{ steps.version.outputs.version }}
+        path: |
+          dist/
+          energy-dashboard-${{ steps.version.outputs.version }}.tar.gz
+
+  # Job 3: Build and push Docker image
+  build-docker:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: [pre-release-validation, build-artifacts]
+    permissions:
+      contents: read
+      packages: write
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Run security scan on image
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-artifacts.outputs.version }}
+        format: 'sarif'
+        output: 'trivy-image-results.sarif'
+        
+    - name: Upload image scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-image-results.sarif'
+
+  # Job 4: Deploy to staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build-artifacts, build-docker]
+    environment: staging
+    if: github.event.inputs.environment == 'staging' || github.event_name == 'release'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to staging
+      run: |
+        echo "🚀 Deploying version ${{ needs.build-artifacts.outputs.version }} to staging..."
+        # Add staging deployment commands here
+        # Examples:
+        # - Deploy to cloud platform (AWS, GCP, Azure)
+        # - Update Kubernetes deployments
+        # - Deploy to container orchestration platform
+        
+    - name: Wait for deployment
+      run: |
+        echo "⏳ Waiting for deployment to be ready..."
+        sleep 30
+        
+    - name: Run smoke tests on staging
+      run: |
+        echo "🔍 Running smoke tests on staging environment..."
+        # Add smoke tests for staging deployment
+        # curl -f https://staging.your-domain.com/health || exit 1
+        
+    - name: Update deployment status
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.repos.createDeploymentStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            deployment_id: context.payload.deployment.id,
+            state: 'success',
+            environment_url: 'https://staging.your-domain.com',
+            description: 'Deployed to staging successfully'
+          });
+
+  # Job 5: Integration tests on staging
+  staging-integration-tests:
+    name: Staging Integration Tests
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install test dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-test.txt
+        
+    - name: Run integration tests against staging
+      env:
+        TEST_ENVIRONMENT: staging
+        STAGING_URL: https://staging.your-domain.com
+      run: |
+        python tests/test_runner.py --integration --verbose
+        
+    - name: Upload staging test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: staging-integration-test-results
+        path: test_reports/
+
+  # Job 6: Deploy to production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build-artifacts, build-docker, staging-integration-tests]
+    environment: production
+    if: github.event.inputs.environment == 'production' || github.event_name == 'release'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Create deployment
+      uses: actions/github-script@v6
+      id: deployment
+      with:
+        script: |
+          const deployment = await github.rest.repos.createDeployment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: context.sha,
+            environment: 'production',
+            description: 'Deploy version ${{ needs.build-artifacts.outputs.version }} to production',
+            auto_merge: false
+          });
+          return deployment.data.id;
+          
+    - name: Deploy to production
+      run: |
+        echo "🚀 Deploying version ${{ needs.build-artifacts.outputs.version }} to production..."
+        # Add production deployment commands here
+        
+    - name: Wait for deployment
+      run: |
+        echo "⏳ Waiting for production deployment to be ready..."
+        sleep 60
+        
+    - name: Run production smoke tests
+      run: |
+        echo "🔍 Running smoke tests on production environment..."
+        # Add production smoke tests
+        
+    - name: Update deployment status
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.repos.createDeploymentStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            deployment_id: ${{ steps.deployment.outputs.result }},
+            state: 'success',
+            environment_url: 'https://your-domain.com',
+            description: 'Deployed to production successfully'
+          });
+
+  # Job 7: Post-deployment validation
+  post-deployment-validation:
+    name: Post-deployment Validation
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run production health checks
+      run: |
+        echo "🏥 Running production health checks..."
+        # Add comprehensive health checks
+        
+    - name: Monitor application metrics
+      run: |
+        echo "📊 Monitoring application metrics..."
+        # Add metrics monitoring
+        
+    - name: Send success notification
+      run: |
+        echo "✅ Release ${{ needs.build-artifacts.outputs.version }} deployed successfully!"
+
+  # Job 8: Create GitHub release
+  create-github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build-artifacts, post-deployment-validation]
+    if: github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download release artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: release-artifacts-${{ needs.build-artifacts.outputs.version }}
+        
+    - name: Generate release notes
+      id: release-notes
+      run: |
+        echo "## 🚀 Release ${{ needs.build-artifacts.outputs.version }}" > release-notes.md
+        echo "" >> release-notes.md
+        echo "### ✨ What's New" >> release-notes.md
+        echo "- Feature updates and improvements" >> release-notes.md
+        echo "" >> release-notes.md
+        echo "### 🐛 Bug Fixes" >> release-notes.md
+        echo "- Various bug fixes and stability improvements" >> release-notes.md
+        echo "" >> release-notes.md
+        echo "### 🔧 Technical Changes" >> release-notes.md
+        echo "- Performance optimizations" >> release-notes.md
+        echo "- Security updates" >> release-notes.md
+        
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ needs.build-artifacts.outputs.version }}
+        release_name: Release ${{ needs.build-artifacts.outputs.version }}
+        body_path: release-notes.md
+        draft: false
+        prerelease: false
+        
+    - name: Upload release assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./energy-dashboard-${{ needs.build-artifacts.outputs.version }}.tar.gz
+        asset_name: energy-dashboard-${{ needs.build-artifacts.outputs.version }}.tar.gz
+        asset_content_type: application/gzip

@@ -1,0 +1,640 @@
+{
+  "last_bulk_fetch": {
+    "IN.INTE.ANS1_bulk": "2025-05-26T17:17:51.460126",
+    "IN.INTE.BAL1_bulk": "2025-05-26T17:18:38.903511",
+    "IN.INTE.BAL2_bulk": "2025-05-26T17:19:30.660311"
+  },
+  "cache_entries": {
+    "7d40af880b8d2758faa1a0eb48c291fd": {
+      "plant_id": "TEST_PLANT",
+      "data_type": "generation",
+      "start_date": "2024-01-01",
+      "end_date": "2024-01-01",
+      "granularity": "1h",
+      "timestamp": "2025-05-26T17:16:46.738793",
+      "file_size": 1400,
+      "rows": 24
+    },
+    "eee293dd1ab2f563782f2feeab50c5a0": {
+      "plant_id": "IN.INTE.ANS1",
+      "data_type": "generation",
+      "start_date": "2024-11-27",
+      "end_date": "2025-05-26",
+      "granularity": "15m",
+      "timestamp": "2025-05-26T17:17:17.745281",
+      "file_size": 771707,
+      "rows": 17376
+    },
+    "b4a6d25fa250bba4ee3ba3935f09eca9": {
+      "plant_id": "IN.INTE.ANS1",
+      "data_type": "generation",
+      "start_date": "2024-11-27",
+      "end_date": "2025-05-26",
+      "granularity": "1h",
+      "timestamp": "2025-05-26T17:17:34.908190",
+      "file_size": 190808,
+      "rows": 4344
+    },
+    "9fa2279a1211caca2e44e3eff973fdc8": {
+      "plant_id": "IN.INTE.ANS1",
+      "data_type": "generation",
+      "start_date": "2024-11-27",
+      "end_date": "2025-05-26",
+      "granularity": "1d",
+      "timestamp": "2025-05-26T17:17:51.455839",
+      "file_size": 8400,
+      "rows": 181
+    },
+    "636bde672d77425645d234e626b9085d": {
+      "plant_id": "IN.INTE.BAL1",
+      "data_type": "generation",
+      "start_date": "2024-11-27",
+      "end_date": "2025-05-26",
+      "granularity": "15m",
+      "timestamp": "2025-05-26T17:18:10.293210",
+      "file_size": 771709,
+      "rows": 17376
+    },
+    "cf8644be9cc1240bfe5e0e05e853bc17": {
+      "plant_id": "IN.INTE.BAL1",
+      "data_type": "generation",
+      "start_date": "2024-11-27",
+      "end_date": "2025-05-26",
+      "granularity": "1h",
+      "timestamp": "2025-05-26T17:18:24.945146",
+      "file_size": 190810,
+      "rows": 4344
+    },
+    "2df8eacc9993e38ecdaae4a7003ac679": {
+      "plant_id": "IN.INTE.BAL1",
+      "data_type": "generation",
+      "start_date": "2024-11-27",
+      "end_date": "2025-05-26",
+      "granularity": "1d",
+      "timestamp": "2025-05-26T17:18:38.902639",
+      "file_size": 8402,
+      "rows": 181
+    },
+    "fbe7de97d5762ee48b338cbbe64cbfa9": {
+      "plant_id": "IN.INTE.BAL2",
+      "data_type": "generation",
+      "start_date": "2024-11-27",
+      "end_date": "2025-05-26",
+      "granularity": "15m",
+      "timestamp": "2025-05-26T17:18:58.687847",
+      "file_size": 771709,
+      "rows": 17376
+    },
+    "d4fdb12244eda26e206e20ddbfb1aaa5": {
+      "plant_id": "IN.INTE.BAL2",
+      "data_type": "generation",
+      "start_date": "2024-11-27",
+      "end_date": "2025-05-26",
+      "granularity": "1h",
+      "timestamp": "2025-05-26T17:19:13.613572",
+      "file_size": 190810,
+      "rows": 4344
+    },
+    "69e59859e35d715ccaed3c6100cbe01a": {
+      "plant_id": "IN.INTE.BAL2",
+      "data_type": "generation",
+      "start_date": "2024-11-27",
+      "end_date": "2025-05-26",
+      "granularity": "1d",
+      "timestamp": "2025-05-26T17:19:30.657214",
+      "file_size": 8402,
+      "rows": 181
+    },
+    "e0f43432106d76bd3703eae100eb5217": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-01",
+      "end_date": "2025-04-09",
+      "granularity": "1d",
+      "timestamp": "2025-05-26T17:20:58.690498",
+      "file_size": 1118,
+      "rows": 9
+    },
+    "87d4f64e510674dc2db04b4baa2a1f9b": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-01",
+      "end_date": "2025-04-09",
+      "granularity": "15m",
+      "timestamp": "2025-05-26T18:24:21.761804",
+      "file_size": 37812,
+      "rows": 864
+    },
+    "507ffc0f50a0441ec624fa0281f53132": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-05",
+      "end_date": "2025-04-07",
+      "granularity": "15m",
+      "timestamp": "2025-05-26T18:29:12.582417",
+      "file_size": 13044,
+      "rows": 288
+    },
+    "a80a389d10c23df7618a3dc24097c2d6": {
+      "plant_id": "IN.INTE.GRAI",
+      "data_type": "generation",
+      "start_date": "2024-11-28",
+      "end_date": "2025-05-27",
+      "granularity": "15m",
+      "timestamp": "2025-05-27T11:47:16.962921",
+      "file_size": 771732,
+      "rows": 17376
+    },
+    "e9b46dfc893cb944444aeeed1541ec6b": {
+      "plant_id": "IN.INTE.GRAI",
+      "data_type": "generation",
+      "start_date": "2024-11-28",
+      "end_date": "2025-05-27",
+      "granularity": "1h",
+      "timestamp": "2025-05-27T11:47:58.521861",
+      "file_size": 190833,
+      "rows": 4344
+    },
+    "0a98f2552457e51effa3b398d1574f6d": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-01",
+      "end_date": "2025-04-01",
+      "granularity": "60m",
+      "timestamp": "2025-05-27T12:20:58.958233",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "ad5eb6a6c14318a5722d45098bca66b6": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-09",
+      "end_date": "2025-04-09",
+      "granularity": "60m",
+      "timestamp": "2025-05-27T12:27:49.149288",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "2544408886397e01eb110f2703ec5ea7": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-01",
+      "end_date": "2025-04-08",
+      "granularity": "15m",
+      "timestamp": "2025-05-27T14:32:22.110924",
+      "file_size": 33684,
+      "rows": 768
+    },
+    "d07d19be937f6b07971d9f13f87c88f8": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-01",
+      "end_date": "2025-04-08",
+      "granularity": "60m",
+      "timestamp": "2025-05-27T12:35:02.205899",
+      "file_size": 8901,
+      "rows": 192
+    },
+    "825b5e598bb4d6f6077284933a0974d0": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-09",
+      "end_date": "2025-04-09",
+      "granularity": "15m",
+      "timestamp": "2025-05-27T12:53:29.331493",
+      "file_size": 4771,
+      "rows": 96
+    },
+    "3ae3107516e1ae9445e11ca15e9ddd9f": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-09",
+      "end_date": "2025-04-09",
+      "granularity": "1h",
+      "timestamp": "2025-05-28T11:10:16.891351",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "54083987f8f1f4a3b36d267205373227": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-05-19",
+      "end_date": "2025-05-26",
+      "granularity": "15m",
+      "timestamp": "2025-05-27T12:56:37.871141",
+      "file_size": 33684,
+      "rows": 768
+    },
+    "9c2a0870376f41cc16a1a0c354d69e7b": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-05-26",
+      "end_date": "2025-05-26",
+      "granularity": "1h",
+      "timestamp": "2025-05-27T12:56:48.749713",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "1ef4e85ef5191b866f441ddcd606455d": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-05-19",
+      "end_date": "2025-05-19",
+      "granularity": "1h",
+      "timestamp": "2025-05-27T12:56:59.816185",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "77984d238bf07cc301524bbf146d828a": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-05-20",
+      "end_date": "2025-05-20",
+      "granularity": "1h",
+      "timestamp": "2025-05-27T12:57:10.303232",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "28cbde734d05e2c2cefb007c5edb4c8a": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-05-21",
+      "end_date": "2025-05-21",
+      "granularity": "1h",
+      "timestamp": "2025-05-27T12:57:20.552451",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "983cd39a9f91d3bfc87919d21f776765": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-05-22",
+      "end_date": "2025-05-22",
+      "granularity": "1h",
+      "timestamp": "2025-05-27T12:57:30.986227",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "653022ac192c65213def92e31c04c405": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-05-23",
+      "end_date": "2025-05-23",
+      "granularity": "1h",
+      "timestamp": "2025-05-27T12:57:41.420126",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "fa9298bd836a0b52a9f19da17344b1d7": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-05-24",
+      "end_date": "2025-05-24",
+      "granularity": "1h",
+      "timestamp": "2025-05-27T12:57:52.120840",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "ebcf9ba2cb29cbeb21317637e0db4256": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-05-25",
+      "end_date": "2025-05-25",
+      "granularity": "1h",
+      "timestamp": "2025-05-27T12:58:02.587752",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "3ff4da4c06072a6556b1ab47e3b39180": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-01",
+      "end_date": "2025-04-01",
+      "granularity": "1h",
+      "timestamp": "2025-05-28T10:49:15.067456",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "173cdd41e4cc74c35295313d4c1dd7be": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-02",
+      "end_date": "2025-04-02",
+      "granularity": "1h",
+      "timestamp": "2025-05-28T10:49:29.752223",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "b1bda74b97775f48f62abe601c2739fc": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-03",
+      "end_date": "2025-04-03",
+      "granularity": "1h",
+      "timestamp": "2025-05-28T10:49:43.530767",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "1b2e3d9c0160b9a5d7bead4b562fa6cb": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-04",
+      "end_date": "2025-04-04",
+      "granularity": "1h",
+      "timestamp": "2025-05-28T10:49:55.739549",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "ccb0cc2d4a7fb1e18b2dcba7e0982ded": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-05",
+      "end_date": "2025-04-05",
+      "granularity": "1h",
+      "timestamp": "2025-05-28T10:50:06.665770",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "457021ce77228b79f19a03afee1b4ede": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-06",
+      "end_date": "2025-04-06",
+      "granularity": "1h",
+      "timestamp": "2025-05-28T11:09:41.046382",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "405d2d14ed494d39be66c8573995afa3": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-07",
+      "end_date": "2025-04-07",
+      "granularity": "1h",
+      "timestamp": "2025-05-28T11:09:52.207371",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "667819820f49607b458d3bd4525fd197": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-08",
+      "end_date": "2025-04-08",
+      "granularity": "1h",
+      "timestamp": "2025-05-28T11:10:04.392495",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "37cff8d66e984f71a456dd715bd569dd": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-05-23",
+      "end_date": "2025-05-26",
+      "granularity": "15m",
+      "timestamp": "2025-05-27T13:16:39.309893",
+      "file_size": 17172,
+      "rows": 384
+    },
+    "a00f7681745842cfb3e879efc6a4ecb0": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-05-26",
+      "end_date": "2025-05-26",
+      "granularity": "15m",
+      "timestamp": "2025-05-27T13:17:18.485749",
+      "file_size": 4771,
+      "rows": 96
+    },
+    "02400f76685ae778e4a8803d83701d44": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-10",
+      "end_date": "2025-04-17",
+      "granularity": "15m",
+      "timestamp": "2025-05-27T14:21:03.407986",
+      "file_size": 33684,
+      "rows": 768
+    },
+    "db657fc06cb8639bd040b4b5fec87ea1": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-10",
+      "end_date": "2025-04-10",
+      "granularity": "1h",
+      "timestamp": "2025-05-28T11:10:32.455012",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "d5803b22474a575d26a4497de122c290": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-11",
+      "end_date": "2025-04-11",
+      "granularity": "1h",
+      "timestamp": "2025-05-27T14:21:44.435640",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "0ac0983644dd270215e68284b744387e": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-12",
+      "end_date": "2025-04-12",
+      "granularity": "1h",
+      "timestamp": "2025-05-27T14:21:55.169880",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "7c48b28f0a863d3f04e90e2e17c329e5": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-13",
+      "end_date": "2025-04-13",
+      "granularity": "1h",
+      "timestamp": "2025-05-27T14:22:06.327092",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "c88714e13d29c0178034e974284e4f4a": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-14",
+      "end_date": "2025-04-14",
+      "granularity": "1h",
+      "timestamp": "2025-05-27T14:22:16.860653",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "294d6428c6c45db528200c47ce94e7a5": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-15",
+      "end_date": "2025-04-15",
+      "granularity": "1h",
+      "timestamp": "2025-05-27T14:22:27.418498",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "3b1cd3e0f210c424e4606fbf351f4310": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-16",
+      "end_date": "2025-04-16",
+      "granularity": "1h",
+      "timestamp": "2025-05-27T14:22:38.180060",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "c46b8095c13c43045e406106cb9c64b8": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-17",
+      "end_date": "2025-04-17",
+      "granularity": "1h",
+      "timestamp": "2025-05-28T11:17:52.456088",
+      "file_size": 1747,
+      "rows": 24
+    },
+    "1c50e8d3cf068cc42b3c9a623a12aa7e": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-01-02",
+      "end_date": "2025-01-05",
+      "granularity": "15m",
+      "timestamp": "2025-05-27T14:25:07.796179",
+      "file_size": 17172,
+      "rows": 384
+    },
+    "a5b6af9c210570bed71dba5cb058fd34": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-10",
+      "end_date": "2025-04-10",
+      "granularity": "15m",
+      "timestamp": "2025-05-27T14:30:12.317709",
+      "file_size": 4771,
+      "rows": 96
+    },
+    "bafe9d25aaac49f761c24312c57a87be": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2024-11-01",
+      "end_date": "2024-11-02",
+      "granularity": "15m",
+      "timestamp": "2025-05-27T14:37:04.381622",
+      "file_size": 8901,
+      "rows": 192
+    },
+    "e8b05b1eee2c6e1782d4c42b43fa0c8c": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-02",
+      "end_date": "2025-04-02",
+      "granularity": "15m",
+      "timestamp": "2025-05-27T14:41:45.691920",
+      "file_size": 4771,
+      "rows": 96
+    },
+    "881544121af4871f280339398033fec4": {
+      "plant_id": "IN.INTE.SKFT",
+      "data_type": "generation",
+      "start_date": "2024-01-01",
+      "end_date": "2024-01-07",
+      "granularity": "15m",
+      "timestamp": "2025-05-27T14:42:42.206773",
+      "file_size": 29538,
+      "rows": 672
+    },
+    "cd67f55aea7ab0a82ab2fe36c37fa255": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-01",
+      "end_date": "2025-04-07",
+      "granularity": "15m",
+      "timestamp": "2025-05-27T14:43:27.426178",
+      "file_size": 29556,
+      "rows": 672
+    },
+    "61883e889135a2ec354f4b34a6c8d03c": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-02",
+      "end_date": "2025-04-10",
+      "granularity": "1d",
+      "timestamp": "2025-05-27T14:49:46.982150",
+      "file_size": 1118,
+      "rows": 9
+    },
+    "fa0a44f48a94a43730047e5967867b01": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-02",
+      "end_date": "2025-04-10",
+      "granularity": "15m",
+      "timestamp": "2025-05-27T14:50:39.530707",
+      "file_size": 37812,
+      "rows": 864
+    },
+    "45f7e782b92ca1b574ceaf8b06da8850": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-01",
+      "end_date": "2025-04-05",
+      "granularity": "1d",
+      "timestamp": "2025-05-28T10:48:57.703114",
+      "file_size": 954,
+      "rows": 5
+    },
+    "9420b8f92d12350f0d4dea1d2002b15e": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-01",
+      "end_date": "2025-04-05",
+      "granularity": "15m",
+      "timestamp": "2025-05-28T10:50:26.242218",
+      "file_size": 21300,
+      "rows": 480
+    },
+    "a72fd147d40e38c8757dbab022d5d524": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-04",
+      "end_date": "2025-04-10",
+      "granularity": "1d",
+      "timestamp": "2025-05-28T11:09:13.232124",
+      "file_size": 1036,
+      "rows": 7
+    },
+    "ec5b071a47f1e93f4b89d469e9b07f8a": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-04",
+      "end_date": "2025-04-10",
+      "granularity": "15m",
+      "timestamp": "2025-05-28T11:10:57.658549",
+      "file_size": 29556,
+      "rows": 672
+    },
+    "0f3fe5e28ecddc6c464cfa141735e10d": {
+      "plant_id": "IN.INTE.KIDS",
+      "data_type": "generation",
+      "start_date": "2025-04-17",
+      "end_date": "2025-04-17",
+      "granularity": "15m",
+      "timestamp": "2025-05-28T11:18:09.661721",
+      "file_size": 4771,
+      "rows": 96
+    },
+    "a3799003dfc3203241739f3436a928dc": {
+      "plant_id": "IN.INTE.ANS1",
+      "data_type": "generation",
+      "start_date": "2025-05-27",
+      "end_date": "2025-05-27",
+      "granularity": "1h",
+      "timestamp": "2025-05-28T11:26:24.245848",
+      "file_size": 1725,
+      "rows": 24
+    }
+  },
+  "version": "1.0"
+}
